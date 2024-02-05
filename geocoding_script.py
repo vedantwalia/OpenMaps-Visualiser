@@ -4,8 +4,8 @@ import ssl
 import json
 import time
 
-#service_url = 'https://py4e-data.dr-chuck.net/opengeo?'
-service_url = "http://py4e-data.dr-chuck.net/json?"
+service_url = 'https://py4e-data.dr-chuck.net/opengeo?'
+
 
 
 conn = sqlite3.connect('location_data.sqlite')
@@ -30,7 +30,7 @@ for line in fh:
 
     address = line.strip()
     
-    cur.execute('SELECT geodata from Locations Where address = ?', (memoryview(address.encode()), ))
+    cur.execute('SELECT geodata from Locations Where address = ? ', (memoryview(address.encode()), ))
     
     # checking for already reterived results
     try:
@@ -43,7 +43,9 @@ for line in fh:
 
     parms = dict()
     parms['q'] = address
-    url = service_url + urllib.parse.urlencode(parms)
+    encoded = urllib.parse.urlencode(parms)
+    
+    url = f"{service_url}{encoded}"
 
     print(f'Reteriving {url}')
 
@@ -56,7 +58,7 @@ for line in fh:
     try:
         js = json.loads(data)
     except:
-        print(data)
+        print(data) #incase of any errors we stop the program to read the output
         continue
     if not js or 'features' not in js:
         print('==== Download error ===')
@@ -68,14 +70,9 @@ for line in fh:
         nofound = nofound + 1
 
     cur.execute('''INSERT INTO Locations (address, geodata)
-                VALUES ( ?, ? )''', (memoryview(address.encode()), memoryview(data.encode()) ) )
+                VALUES ( ? , ? )''', (memoryview(address.encode()), memoryview(data.encode()) ) )
     conn.commit()
 
     if count % 10 == 0 :
         print('Pausing for a bit...')
         time.sleep(5)
-
-if nofound > 0:
-    print('Number of features for which the location could not be found:', nofound)
-
-print("Run geodump.py to read the data from the database so you can vizualize it on a map.")
