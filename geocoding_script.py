@@ -65,10 +65,6 @@ for line in fh:
         print(data)
         break
 
-    if len(js['features']) == 0:
-        print('==== Object not found ====')
-        nofound = nofound + 1
-
     cur.execute('''INSERT INTO Locations (address, geodata)
                 VALUES ( ? , ? )''', (memoryview(address.encode()), memoryview(data.encode()) ) )
     conn.commit()
